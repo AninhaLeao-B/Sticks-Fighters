@@ -1,0 +1,11 @@
+# Eclipse
+.project
+.classpath
+.settings/
+
+# Compilados Java
+bin/
+*.class
+
+# Logs
+*.log
