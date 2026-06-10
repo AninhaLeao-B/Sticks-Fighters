@@ -16,8 +16,8 @@ public class CharacterRenderer {
     private static final Map<String, SpriteAnimation> jumpAnimations = new HashMap<>();
     private static final Map<String, SpriteAnimation> crouchAnimations = new HashMap<>();
     private static final Map<String, SpriteAnimation> walkAnimations = new HashMap<>();
-    
-    private static long lastAttackId = -1;
+
+    private static String lastAction = "";
 
     private static SpriteAnimation getOrLoadAnimation(Map<String, SpriteAnimation> cache,
                                                        String folder, String action) {
@@ -27,7 +27,9 @@ public class CharacterRenderer {
 
     private static SpriteAnimation loadAnimation(String spriteFolder, String action) {
         String path = "/sprites/" + spriteFolder + "/" + action;
-        BufferedImage[] frames = SpriteLoader.loadFrames(path);
+        
+        // Carrega TODOS os frames disponíveis (sem limite fixo)
+        BufferedImage[] frames = SpriteLoader.loadFrames(path);   // sem passar quantidade
 
         if (frames.length == 0) {
             System.err.println("⚠ Nenhum frame encontrado para: " + path);
@@ -38,81 +40,78 @@ public class CharacterRenderer {
             case "idle" -> 180;
             case "punch", "kick" -> 60;
             case "walk" -> 80;
-            default -> 90; // jump, crouch
+            case "jump", "crouch" -> 90;
+            default -> 90;
         };
 
         return new SpriteAnimation(frames, delay);
     }
 
     public static void drawPlayer(Graphics g, PlayerMovement movement,
-                                  CombatAnimationManager animations, Fighter fighter) {
+            CombatAnimationManager animations, Fighter fighter) {
 
-        if (g == null || fighter == null || movement == null) return;
-
-        String folder = fighter.getSpriteFolder();
-        SpriteAnimation currentAnimation;
-        boolean loopAnimation = true;
-        int offsetX = 0;
-        int offsetY = 0;
-
-        if (animations.isPlayerAttacking()) {
-            currentAnimation =
-                    getOrLoadAnimation(
-                            attackAnimations,
-                            folder,
-                            "punch");
-            if (animations.getAttackId() != lastAttackId) {
-
-                currentAnimation.reset();
-
-                lastAttackId = animations.getAttackId();
-            }
-
-            System.out.println(
-                    "Frame ataque: "
-                    + currentAnimation.getCurrentFrameIndex());
-
-            loopAnimation = false;
-            offsetY = -5;
-        }
-        else if (animations.isPlayerJumping() || movement.isJumping()) {
-            currentAnimation = getOrLoadAnimation(jumpAnimations, folder, "jump");
-            loopAnimation = false;
-            offsetY = -45;
+		if (g == null || fighter == null || movement == null) return;
+		
+		String folder = fighter.getSpriteFolder();
+		SpriteAnimation currentAnimation;
+		int offsetX = 0;
+		int offsetY = 0;          // Vamos calibrar bem aqui
+		String currentAction = "idle";
+		
+		if (animations.isPlayerAttacking()) {
+            String attackType = animations.getCurrentAttackType(); // "punch" ou "kick"
+            currentAnimation = getOrLoadAnimation(attackAnimations, folder, attackType);
+            currentAction = "attack";
+            offsetY = 60;   // mantenha seu valor
         } 
-        else if (animations.isPlayerCrouching() || movement.isCrouching()) {
-            currentAnimation = getOrLoadAnimation(crouchAnimations, folder, "crouch");
-            loopAnimation = false;
-            offsetY = 0;
-            offsetX = 10;
-        } 
-        else if (movement.isMoving()) {                    // Walk
-            currentAnimation = getOrLoadAnimation(walkAnimations, folder, "walk");
-            loopAnimation = true;
-            offsetY = 0;
-        } 
-        else {
-            currentAnimation = getOrLoadAnimation(idleAnimations, folder, "idle");
-            loopAnimation = true;
-            offsetY = 0;
-        }
+		else if (animations.isPlayerJumping() || movement.isJumping()) {
+			currentAnimation = getOrLoadAnimation(jumpAnimations, folder, "jump");
+			currentAction = "jump";
+			offsetY = 60;        // pulo precisa subir bastante
+		} 
+		else if (animations.isPlayerCrouching() || movement.isCrouching()) {
+		currentAnimation = getOrLoadAnimation(crouchAnimations, folder, "crouch");
+		currentAction = "crouch";
+			offsetY = 60;         // agachado desce
+			offsetX = 8;
+		} 
+		else if (movement.isMoving() && !movement.isJumping() && !movement.isCrouching()) {
+			currentAnimation = getOrLoadAnimation(walkAnimations, folder, "walk");
+			currentAction = "walk";
+			offsetY = 65;         // walk geralmente fica um pouco mais baixo
+		} 
+		else {
+			currentAnimation = getOrLoadAnimation(idleAnimations, folder, "idle");
+			currentAction = "idle";
+			offsetY = 60;         // idle como referência principal
+		}
+		
+		// Reset quando muda de animação
+		if (!currentAction.equals(lastAction)) {
+			currentAnimation.reset();
+			lastAction = currentAction;
+		}
+		
+		// Lógica de atualização
+		if (currentAction.equals("crouch") || currentAction.equals("jump")) {
+			int middleFrame = currentAnimation.getTotalFrames() / 2;
+		if (currentAnimation.getCurrentFrameIndex() < middleFrame) {
+			currentAnimation.update();
+			}
+		} else {
+			currentAnimation.update();
+		}
+		
+		BufferedImage frame = currentAnimation.getCurrentFrame();
+		if (frame != null) {
+			g.drawImage(frame,
+			  movement.getPlayerX() + offsetX,
+			  movement.getPlayerY() - 25 + offsetY,   // base aqui
+			  124, 124, null);
+			}
+		}
 
-        // Controle de looping
-        if (!loopAnimation && currentAnimation.getCurrentFrameIndex() >= currentAnimation.getTotalFrames() - 1) {
-            // mantém último frame
-        } else {
-            currentAnimation.update();
-        }
-
-        BufferedImage frame = currentAnimation.getCurrentFrame();
-        if (frame != null) {
-            g.drawImage(frame,
-                        movement.getPlayerX() + offsetX,
-                        movement.getPlayerY() + 35 + offsetY,
-                        124, 124, null);
-        }
-    }
-
+    // ... drawEnemy e clearCache permanecem iguais ...
     public static void drawEnemy(Graphics g, int enemyX, CombatAnimationManager animations) {
         if (g == null) return;
         StickmanRenderer.drawStickman(
@@ -123,16 +122,6 @@ public class CharacterRenderer {
                 false
         );
     }
-    
-    public static void resetAttackAnimation(String folder) {
-
-        SpriteAnimation attack =
-                attackAnimations.get(folder + "_punch");
-
-        if (attack != null) {
-            attack.reset();
-        }
-    }
 
     public static void clearCache() {
         idleAnimations.clear();
@@ -140,5 +129,6 @@ public class CharacterRenderer {
         jumpAnimations.clear();
         crouchAnimations.clear();
         walkAnimations.clear();
+        lastAction = "";
     }
 }

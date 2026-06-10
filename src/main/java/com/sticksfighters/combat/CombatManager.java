@@ -27,18 +27,17 @@ public class CombatManager {
         this.enemyX = enemyX;
     }
 
-    public void playerAttack(String attackType) {
+    public void playerAttack(String type) {
         int distance = Math.abs(movement.getPlayerX() - enemyX);
 
-        // Lógica de ataque (separada do visual)
         controller.playerAttack(
-                attackType,
+                type,
                 movement.isJumping(),
                 movement.isCrouching(),
-                distance
-        );
+                distance);
 
-        animations.playPlayerAttackAnimation();
+        // Passa o tipo do ataque para a animação
+        animations.playPlayerAttackAnimation(type);   
 
         if (controller.getEnemy().isAlive()) {
             animations.playEnemyAttackAnimation(() -> {

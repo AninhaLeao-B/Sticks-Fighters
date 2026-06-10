@@ -7,6 +7,7 @@ import com.sticksfighters.fighters.FighterData;
 import com.sticksfighters.input.PlayerInputHandler;
 import com.sticksfighters.physics.PlayerMovement;
 import com.sticksfighters.render.*;
+import java.awt.image.BufferedImage;
 
 import javax.swing.*;
 import java.awt.*;
@@ -17,6 +18,8 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
     private static final int ENEMY_X = 550;
 
     private final GameController controller;
+    private final String backgroundPath;
+
     private PlayerMovement movement;
     private final PlayerInputHandler inputHandler;
     private CombatManager combatManager;
@@ -28,16 +31,23 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
     private PauseMenu pauseMenu;
     private boolean isPaused = false;
 
+    // Construtor antigo (compatibilidade)
     public GamePanel() {
-        this(new GameController());
-    }
-    
-    public GamePanel(FighterData playerData) {
-        this(new GameController(playerData));
+        this(new GameController(), "/backgrounds/arena_esgoto.png");
     }
 
-    public GamePanel(GameController controller) {
+    public GamePanel(FighterData playerData) {
+        this(new GameController(playerData), "/backgrounds/arena_esgoto.png");
+    }
+
+    // Novo construtor principal com background
+    public GamePanel(FighterData playerData, String backgroundPath) {
+        this(new GameController(playerData), backgroundPath);
+    }
+
+    public GamePanel(GameController controller, String backgroundPath) {
         this.controller = controller;
+        this.backgroundPath = (backgroundPath != null) ? backgroundPath : "/backgrounds/arena_esgoto.png";
 
         setBackground(new Color(20, 20, 40));
         setFocusable(true);
@@ -74,11 +84,14 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
         super.paintComponent(g);
 
         if (isPaused && pauseMenu != null) {
-            pauseMenu.paintComponent(g);   // desenha o menu por cima
+            // Desenha o fundo + menu por cima
+            drawBackground(g);
+            pauseMenu.paintComponent(g);
             return;
         }
 
-        BackgroundRenderer.drawArena(g, getWidth(), getHeight());
+        // Jogo normal
+        drawBackground(g);
 
         CharacterRenderer.drawPlayer(g, movement, animations, controller.getPlayer());
         CharacterRenderer.drawEnemy(g, ENEMY_X, animations);
@@ -86,6 +99,15 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
         drawHUD(g);
         GameOverRenderer.draw(g, controller.isGameOver(), 
                              controller.getResultMessage(), getWidth(), getHeight());
+    }
+
+    private void drawBackground(Graphics g) {
+        BufferedImage bg = ImageLoader.loadImage(backgroundPath);
+        if (bg != null) {
+            g.drawImage(bg, 0, 0, getWidth(), getHeight(), null);
+        } else {
+            BackgroundRenderer.drawArena(g, getWidth(), getHeight());
+        }
     }
 
     private void drawHUD(Graphics g) {
@@ -106,21 +128,16 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
             return;
         }
 
-        // Pause com ESC
         if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
             togglePause();
             return;
         }
 
-        if (isPaused) {
-            // O PauseMenu cuida dos inputs dele
-            return;
-        }
+        if (isPaused) return;
 
-     // Atualiza estados de animação
         animations.setJumping(movement.isJumping());
         animations.setCrouching(movement.isCrouching());
-        
+
         inputHandler.handleKeyPressed(
             e,
             movement::moveLeft,
@@ -162,8 +179,8 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
                 );
             }
             pauseMenu.setSize(getSize());
-            add(pauseMenu);
-            pauseMenu.requestFocusInWindow();   // ← Isso é o mais importante
+            add(pauseMenu);                    // Adiciona como componente
+            pauseMenu.requestFocusInWindow();  // Força o foco
         } else {
             if (pauseMenu != null) {
                 remove(pauseMenu);
@@ -178,9 +195,9 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
             remove(pauseMenu);
         }
         repaint();
-        requestFocusInWindow();   // Devolve o foco pro GamePanel
+        requestFocusInWindow();   // Devolve o foco para o jogo
     }
-
+    
     private void returnToSelection() {
         Main.returnToSelection();   // Chama o método estático do Main
     }
@@ -196,7 +213,6 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
                 ENEMY_X,
                 this::repaint
         );
-
         repaint();
     }
 

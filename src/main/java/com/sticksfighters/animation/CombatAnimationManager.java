@@ -9,15 +9,16 @@ public class CombatAnimationManager {
     private boolean playerCrouching;
     private boolean enemyAttacking;
     private boolean enemyDamaged;
-    private long attackId = 0;
+
+    private String currentAttackType = "punch";
 
     /**
-     * Inicia animação de ataque do jogador
+     * Inicia animação de ataque do jogador (com tipo punch/kick)
      */
-    public void playPlayerAttackAnimation() {
-
-        attackId++;
-
+    public void playPlayerAttackAnimation(String attackType) {
+        this.currentAttackType = (attackType != null && attackType.toLowerCase().contains("kick")) 
+                ? "kick" : "punch";
+        
         playerAttacking = true;
 
         new Thread(() -> {
@@ -29,6 +30,10 @@ public class CombatAnimationManager {
                 playerAttacking = false;
             }
         }).start();
+    }
+
+    public String getCurrentAttackType() {
+        return currentAttackType;
     }
 
     /**
@@ -57,7 +62,7 @@ public class CombatAnimationManager {
         }).start();
     }
 
-    // === Novos setters para animações do jogador ===
+    // Setters
     public void setJumping(boolean jumping) {
         this.playerJumping = jumping;
     }
@@ -66,22 +71,19 @@ public class CombatAnimationManager {
         this.playerCrouching = crouching;
     }
 
-    // === Getters ===
+    // Getters
     public boolean isPlayerAttacking() { return playerAttacking; }
     public boolean isPlayerJumping() { return playerJumping; }
     public boolean isPlayerCrouching() { return playerCrouching; }
     public boolean isEnemyAttacking() { return enemyAttacking; }
     public boolean isEnemyDamaged() { return enemyDamaged; }
-    public long getAttackId() { return attackId; }
 
-    /**
-     * Reseta todos os estados (importante para reset de jogo)
-     */
     public void reset() {
         this.playerAttacking = false;
         this.playerJumping = false;
         this.playerCrouching = false;
         this.enemyAttacking = false;
         this.enemyDamaged = false;
+        this.currentAttackType = "punch";
     }
 }
