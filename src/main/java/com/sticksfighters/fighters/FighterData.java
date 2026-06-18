@@ -7,9 +7,10 @@ public class FighterData {
     private final int speed;
     private final int strength;
     private final int range;
+    private final double defense;
     private final String spriteFolder;
 
-    public FighterData(String name, int maxHealth, int speed, int strength, int range, String spriteFolder) {
+    public FighterData(String name, int maxHealth, int speed, int strength, int range, double defense, String spriteFolder ) {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Name cannot be null or empty");
         }
@@ -28,6 +29,7 @@ public class FighterData {
         this.speed = speed;
         this.strength = strength;
         this.range = range;
+        this.defense = defense;
         this.spriteFolder = spriteFolder.trim();
     }
 
@@ -37,6 +39,7 @@ public class FighterData {
     public int getSpeed() { return speed; }
     public int getStrength() { return strength; }
     public int getRange() { return range; }
+    public double getDefense() { return defense; }
     public String getSpriteFolder() { return spriteFolder; }
 
     @Override

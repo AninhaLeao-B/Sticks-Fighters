@@ -85,4 +85,12 @@ public class Main {
         }
         showSelectionScreen();
     }
+    
+    public static void returnToStageSelection() {
+        if (gamePanel != null) {
+            window.remove(gamePanel);
+            gamePanel = null;
+        }
+        showStageSelectionScreen();   // volta direto para a seleção de fase
+    }
 }

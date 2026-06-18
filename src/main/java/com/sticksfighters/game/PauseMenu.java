@@ -9,23 +9,39 @@ public class PauseMenu extends JPanel {
 
     private final Runnable onResume;
     private final Runnable onReturnToSelection;
-    private int selectedOption = 0;
-    private final String[] options = {"Continuar", "Voltar à Seleção", "Sair do Jogo"};
+    private final Runnable onReturnToStageSelection;
+    private final Runnable onReturnToMainMenu;
 
-    public PauseMenu(Runnable onResume, Runnable onReturnToSelection) {
+    private int selectedOption = 0;
+    private final String[] options = {
+        "Continuar Jogando",
+        "Voltar à Seleção de Personagem",
+        "Voltar à Seleção de Fase",
+        "Voltar ao Menu Inicial",
+        "Sair do Jogo"
+    };
+
+    public PauseMenu(Runnable onResume, 
+                     Runnable onReturnToSelection,
+                     Runnable onReturnToStageSelection,
+                     Runnable onReturnToMainMenu) {
+        
         this.onResume = onResume;
         this.onReturnToSelection = onReturnToSelection;
+        this.onReturnToStageSelection = onReturnToStageSelection;
+        this.onReturnToMainMenu = onReturnToMainMenu;
 
-        setBackground(new Color(0, 0, 0, 200)); // semi-transparente
+        setBackground(new Color(0, 0, 0, 200));
         setFocusable(true);
-        requestFocusInWindow();
 
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
                 switch (e.getKeyCode()) {
-                    case KeyEvent.VK_W, KeyEvent.VK_UP -> selectedOption = (selectedOption - 1 + options.length) % options.length;
-                    case KeyEvent.VK_S, KeyEvent.VK_DOWN -> selectedOption = (selectedOption + 1) % options.length;
+                    case KeyEvent.VK_W, KeyEvent.VK_UP -> 
+                        selectedOption = (selectedOption - 1 + options.length) % options.length;
+                    case KeyEvent.VK_S, KeyEvent.VK_DOWN -> 
+                        selectedOption = (selectedOption + 1) % options.length;
                     case KeyEvent.VK_ENTER, KeyEvent.VK_SPACE -> executeOption();
                     case KeyEvent.VK_ESCAPE -> onResume.run();
                 }
@@ -36,9 +52,11 @@ public class PauseMenu extends JPanel {
 
     private void executeOption() {
         switch (selectedOption) {
-            case 0 -> onResume.run();           // Continuar
-            case 1 -> onReturnToSelection.run(); // Voltar à seleção
-            case 2 -> System.exit(0);           // Sair
+            case 0 -> onResume.run();
+            case 1 -> onReturnToSelection.run();
+            case 2 -> onReturnToStageSelection.run();
+            case 3 -> onReturnToMainMenu.run();
+            case 4 -> System.exit(0);
         }
     }
 
@@ -50,21 +68,22 @@ public class PauseMenu extends JPanel {
         g.fillRect(0, 0, getWidth(), getHeight());
 
         g.setColor(Color.WHITE);
-        g.setFont(g.getFont().deriveFont(48f));
-        g.drawString("PAUSA", getWidth()/2 - 80, 150);
+        g.setFont(g.getFont().deriveFont(Font.BOLD, 48f));
+        g.drawString("PAUSA", getWidth()/2 - 80, 140);
 
-        g.setFont(g.getFont().deriveFont(28f));
+        g.setFont(g.getFont().deriveFont(Font.PLAIN, 26f));
         for (int i = 0; i < options.length; i++) {
             if (i == selectedOption) {
                 g.setColor(Color.YELLOW);
-                g.drawString("→ " + options[i], getWidth()/2 - 120, 250 + i * 60);
+                g.drawString("→ " + options[i], getWidth()/2 - 200, 230 + i * 55);
             } else {
                 g.setColor(Color.WHITE);
-                g.drawString(options[i], getWidth()/2 - 100, 250 + i * 60);
+                g.drawString(options[i], getWidth()/2 - 170, 230 + i * 55);
             }
         }
 
-        g.setFont(g.getFont().deriveFont(18f));
-        g.drawString("ESC - Fechar menu", getWidth()/2 - 100, 480);
+        g.setColor(Color.LIGHT_GRAY);
+        g.setFont(g.getFont().deriveFont(Font.PLAIN, 18f));
+        g.drawString("ESC - Fechar Menu", getWidth()/2 - 100, getHeight() - 40);
     }
 }

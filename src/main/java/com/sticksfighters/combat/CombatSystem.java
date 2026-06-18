@@ -6,30 +6,36 @@ import com.sticksfighters.fighters.Fighter;
 public class CombatSystem {
 
     /**
-     * Executa um ataque completo: calcula dano, aplica no defensor e gerencia energia.
+     * Executa um ataque completo e retorna o dano causado.
      */
-    public static void executeAttack(Fighter attacker, Fighter defender, Attack attack) {
+	public static void executeAttack(Fighter attacker, Fighter defender, Attack attack) {
         if (attacker == null || defender == null || attack == null) {
             throw new IllegalArgumentException("Attacker, defender and attack cannot be null");
         }
         if (!attacker.isAlive()) {
-            return; // não ataca se já estiver morto
+            return; 
         }
 
         int finalDamage = attack.getDamage() + attacker.getStrength();
+        
+        // 🛡️ NOVO: SE ESTIVER DEFENDENDO, REDUZ O DANO!
+        if (defender.isBlocking()) {
+            double mutiplicadorDano = 1.0 - defender.getDefense(); // Ex: 1.0 - 0.35 = 0.65
+            finalDamage = (int) (finalDamage * mutiplicadorDano);
+            System.out.println("🛡️ DEFESA DINÂMICA! " + defender.getName() + " absorveu " + (defender.getDefense() * 100) + "% do impacto. Dano sofrido: " + finalDamage);
+        }
+
         defender.receiveDamage(finalDamage);
 
         if (attack.isSpecial()) {
             attacker.useSpecialEnergy(attack.getEnergyCost());
         } else {
-            attacker.gainSpecialEnergy(10); // ganho fixo de energia em ataques normais
+            attacker.gainSpecialEnergy(10); 
         }
     }
 
-    /**
-     * Versão mais flexível (caso no futuro queira multiplicadores, críticos, etc.)
-     */
     public static int calculateDamage(Fighter attacker, Attack attack) {
         return attack.getDamage() + attacker.getStrength();
     }
+    
 }

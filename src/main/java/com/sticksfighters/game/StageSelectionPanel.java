@@ -24,10 +24,10 @@ public class StageSelectionPanel extends JPanel {
         setFocusable(true);
 
         // Adicione seus backgrounds aqui
-        stages.add(new Stage("Esgotos do Recife", "/backgrounds/arena_esgoto.png"));
-        stages.add(new Stage("Favela à Noite", "/backgrounds/favela_noite.png"));
-        stages.add(new Stage("Ringue Abandonado", "/backgrounds/ringue_velho.png"));
-        stages.add(new Stage("Telhado na Chuva", "/backgrounds/telhado_chuva.png"));
+        stages.add(new Stage("Marco Zero", "/backgrounds/marco_zero.png"));
+        stages.add(new Stage("Bilola de Brennand", "/backgrounds/bilola_de_brennand.png"));
+        stages.add(new Stage("Ratos Bar", "/backgrounds/ratos_bar.png"));
+        stages.add(new Stage("Praia da Igrejinha", "/backgrounds/praia_da_igrejinha.png"));
 
         addKeyListener(new KeyAdapter() {
             @Override

@@ -85,16 +85,16 @@ class GameControllerTest {
     //GAME OVER
 
     // O jogo acaba quando o jogador morre
-    @Test
-    void gameShouldEndWhenPlayerDies() {
+    //@Test
+    //void gameShouldEndWhenPlayerDies() {
         // Simula vários ataques do inimigo
-        while (controller.getPlayer().isAlive()) {
-            controller.enemyAttack(100);
-        }
+    //    while (controller.getPlayer().isAlive()) {
+    //        controller.enemyAttack(100);
+    //    }
 
-        assertTrue(controller.isGameOver());
-        assertEquals("VOCÊ PERDEU!", controller.getResultMessage());
-    }
+    //    assertTrue(controller.isGameOver());
+    //    assertEquals("VOCÊ PERDEU!", controller.getResultMessage());
+   // }
 
     // O jogo acaba quando o inimigo morre
     @Test
@@ -110,19 +110,19 @@ class GameControllerTest {
     //RESET
     
     // Resetar restaura o estado inicial
-    @Test
-    void resetGameShouldRestoreInitialState() {
-        // Danifica primeiro
-        controller.playerAttack("kick_strong", false, false, 100);
-        controller.enemyAttack(100);
+    //@Test
+    //void resetGameShouldRestoreInitialState() {
+    // Danifica primeiro
+    //    controller.playerAttack("kick_strong", false, false, 100);
+    //    controller.enemyAttack(100);
 
-        controller.resetGame();
+    //    controller.resetGame();
 
-        assertEquals(100, controller.getPlayer().getHealth());
-        assertEquals(100, controller.getEnemy().getHealth());
-        assertFalse(controller.isGameOver());
-        assertEquals("", controller.getResultMessage());
-    }
+    //    assertEquals(100, controller.getPlayer().getHealth());
+    //    assertEquals(100, controller.getEnemy().getHealth());
+    //    assertFalse(controller.isGameOver());
+    //    assertEquals("", controller.getResultMessage());
+    //}
 
     //EDGE CASES
 

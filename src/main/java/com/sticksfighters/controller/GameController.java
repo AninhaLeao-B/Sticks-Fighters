@@ -6,7 +6,6 @@ import com.sticksfighters.combat.CombatSystem;
 import com.sticksfighters.fighters.Fighter;
 import com.sticksfighters.fighters.FighterData;
 import com.sticksfighters.fighters.Fighters;
-
 import java.util.Objects;
 import java.util.Random;
 
@@ -16,23 +15,23 @@ public class GameController {
     private Fighter enemy;
     private boolean gameOver;
     private String resultMessage;
-
     private final Random random;
 
     public GameController() {
-        this(new Random());
+        this(null, new Random());
     }
-    
+
     public GameController(FighterData playerData) {
-        this(new Random());
+        this(playerData, new Random());
+    }
+
+    // Construtor principal corrigido: garante que playerData seja processado antes do reset
+    public GameController(FighterData playerData, Random random) {
+        this.random = Objects.requireNonNull(random);
         if (playerData != null) {
             this.player = new Fighter(playerData);
         }
-    }
-
-    public GameController(Random random) {
-        this.random = Objects.requireNonNull(random);
-        resetGame();
+        resetGame(); 
     }
 
     public Fighter getPlayer() { return player; }
@@ -40,34 +39,30 @@ public class GameController {
     public boolean isGameOver() { return gameOver; }
     public String getResultMessage() { return resultMessage; }
 
-    public void playerAttack(String type, boolean jumping, boolean crouching, int distance) {
-        if (gameOver || !player.isAlive()) return;
+    public boolean playerAttack(String type, boolean jumping, boolean crouching, int distance) {
+        if (gameOver || !player.isAlive() || player.isStunned()) return false;
 
         Attack attack = chooseAttack(type, jumping, crouching);
-        if (attack == null) {
-            System.out.println("Ataque não reconhecido: " + type);
-            return;
-        }
+        if (attack == null) return false;
 
-        if (!canHit(player, distance, jumping, crouching)) {
-            System.out.println("Fora de alcance! Distância: " + distance);
-            return;
-        }
-
-        System.out.println("Player atacou com: " + attack.getName()); // debug
+        if (!canHit(player, distance, jumping, crouching)) return false;
 
         CombatSystem.executeAttack(player, enemy, attack);
         checkGameOver();
+        return true; 
     }
 
-    public void enemyAttack(int distance) {
-        if (gameOver || !enemy.isAlive()) return;
+    public boolean enemyAttack(int distance, boolean playerJumping, boolean playerCrouching) {
+        if (gameOver || !enemy.isAlive()) return false; 
 
         Attack attack = AttackFactory.getRandomNormalAttack(random.nextLong());
-        if (!canHit(enemy, distance, false, false)) return;
+        
+        // O contra-ataque do inimigo calcula se alcança o player em pé
+        if (!canHit(enemy, distance, false, false)) return false; 
 
         CombatSystem.executeAttack(enemy, player, attack);
         checkGameOver();
+        return true;
     }
 
     private Attack chooseAttack(String type, boolean jumping, boolean crouching) {
@@ -95,24 +90,14 @@ public class GameController {
 
     private boolean canHit(Fighter attacker, int distance, boolean jumping, boolean crouching) {
         int baseRange = attacker.getRange();
+        
+        // Ajustado para 140 para cobrir perfeitamente as caixas de colisão
+        int hitRange = 140 + baseRange; 
 
-        int hitRange = 95 + baseRange;     // Normal - mais generoso
+        if (jumping) hitRange = 170 + baseRange;
+        else if (crouching) hitRange = 120 + baseRange;
 
-        if (jumping) {
-            hitRange = 125 + baseRange;
-        } else if (crouching) {
-            hitRange = 80 + baseRange;
-        }
-
-        boolean canHit = distance < hitRange;
-
-        if (canHit) {
-            System.out.println("✅ ATAQUE LIBERADO! Dist: " + distance + " | HitRange: " + hitRange);
-        } else {
-            System.out.println("❌ Fora de alcance! Dist: " + distance + " | HitRange: " + hitRange);
-        }
-
-        return canHit;
+        return distance < hitRange;
     }
 
     private void checkGameOver() {
@@ -126,13 +111,15 @@ public class GameController {
     }
 
     public void resetGame() {
-        // Se quiser manter o mesmo personagem após reset, guarde ele em um campo
+        // Mantém o jogador atual ou cria a Rata
         if (player == null) {
             player = new Fighter(Fighters.rataCamponesa());
         } else {
-            player = new Fighter(player.getData()); // reset mantendo o mesmo lutador
+            player = new Fighter(player.getData()); 
         }
-        enemy = new Fighter(Fighters.chicao());
+
+        enemy = new Fighter(Fighters.cornoVei());
+
         gameOver = false;
         resultMessage = "";
     }

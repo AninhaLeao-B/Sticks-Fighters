@@ -9,12 +9,11 @@ public class CombatAnimationManager {
     private boolean playerCrouching;
     private boolean enemyAttacking;
     private boolean enemyDamaged;
+    private boolean playerDamaged;
 
     private String currentAttackType = "punch";
+    private long damageEndTime = 0;
 
-    /**
-     * Inicia animação de ataque do jogador (com tipo punch/kick)
-     */
     public void playPlayerAttackAnimation(String attackType) {
         this.currentAttackType = (attackType != null && attackType.toLowerCase().contains("kick")) 
                 ? "kick" : "punch";
@@ -22,13 +21,9 @@ public class CombatAnimationManager {
         playerAttacking = true;
 
         new Thread(() -> {
-            try {
-                Thread.sleep(300);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            } finally {
-                playerAttacking = false;
-            }
+            try { Thread.sleep(300); } 
+            catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            finally { playerAttacking = false; }
         }).start();
     }
 
@@ -36,42 +31,52 @@ public class CombatAnimationManager {
         return currentAttackType;
     }
 
-    /**
-     * Inicia animação de ataque do inimigo com callback
-     */
+    public void playDamageAnimation() {
+        playerDamaged = true;
+        damageEndTime = System.currentTimeMillis() + 450;
+
+        new Thread(() -> {
+            try { Thread.sleep(450); } 
+            catch (InterruptedException ignored) {}
+            playerDamaged = false;
+        }).start();
+    }
+
+    public boolean isPlayerDamaged() {
+        if (playerDamaged && System.currentTimeMillis() > damageEndTime) {
+            playerDamaged = false;
+        }
+        return playerDamaged;
+    }
+
+    public void triggerEnemyDamage() {
+        enemyDamaged = true;
+        new Thread(() -> {
+            try { Thread.sleep(300); } 
+            catch (InterruptedException ignored) {}
+            enemyDamaged = false;
+        }).start();
+    }
+
     public void playEnemyAttackAnimation(Runnable attackLogic) {
-        Objects.requireNonNull(attackLogic, "Attack logic cannot be null");
+        Objects.requireNonNull(attackLogic);
 
         new Thread(() -> {
             try {
                 Thread.sleep(400);
                 enemyAttacking = true;
-
                 attackLogic.run();
-
                 Thread.sleep(300);
                 enemyAttacking = false;
-                enemyDamaged = true;
-
-                Thread.sleep(150);
-                enemyDamaged = false;
-
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
         }).start();
     }
 
-    // Setters
-    public void setJumping(boolean jumping) {
-        this.playerJumping = jumping;
-    }
+    public void setJumping(boolean jumping) { this.playerJumping = jumping; }
+    public void setCrouching(boolean crouching) { this.playerCrouching = crouching; }
 
-    public void setCrouching(boolean crouching) {
-        this.playerCrouching = crouching;
-    }
-
-    // Getters
     public boolean isPlayerAttacking() { return playerAttacking; }
     public boolean isPlayerJumping() { return playerJumping; }
     public boolean isPlayerCrouching() { return playerCrouching; }
@@ -79,11 +84,12 @@ public class CombatAnimationManager {
     public boolean isEnemyDamaged() { return enemyDamaged; }
 
     public void reset() {
-        this.playerAttacking = false;
-        this.playerJumping = false;
-        this.playerCrouching = false;
-        this.enemyAttacking = false;
-        this.enemyDamaged = false;
-        this.currentAttackType = "punch";
+        playerAttacking = false;
+        playerJumping = false;
+        playerCrouching = false;
+        enemyAttacking = false;
+        enemyDamaged = false;
+        playerDamaged = false;
+        currentAttackType = "punch";
     }
 }

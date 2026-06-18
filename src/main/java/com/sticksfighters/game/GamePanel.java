@@ -84,7 +84,6 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
         super.paintComponent(g);
 
         if (isPaused && pauseMenu != null) {
-            // Desenha o fundo + menu por cima
             drawBackground(g);
             pauseMenu.paintComponent(g);
             return;
@@ -93,8 +92,11 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
         // Jogo normal
         drawBackground(g);
 
+        // Desenha o jogador com os sprites dele
         CharacterRenderer.drawPlayer(g, movement, animations, controller.getPlayer());
-        CharacterRenderer.drawEnemy(g, ENEMY_X, animations);
+        
+        // 🎯 A MÁGICA AQUI: Passando o objeto Fighter do inimigo para carregar os sprites do Corno_Vei!
+        CharacterRenderer.drawEnemy(g, ENEMY_X, animations, controller.getEnemy());
 
         drawHUD(g);
         GameOverRenderer.draw(g, controller.isGameOver(), 
@@ -135,6 +137,10 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
 
         if (isPaused) return;
 
+        if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+            controller.getPlayer().setBlocking(true);
+        }
+
         animations.setJumping(movement.isJumping());
         animations.setCrouching(movement.isCrouching());
 
@@ -165,6 +171,10 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
             movement.stopMovingRight();
         }
 
+        if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+            controller.getPlayer().setBlocking(false);
+        }
+
         inputHandler.handleKeyReleased(e, movement::stopCrouching);
     }
 
@@ -175,12 +185,14 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
             if (pauseMenu == null) {
                 pauseMenu = new PauseMenu(
                     this::resumeGame,
-                    this::returnToSelection
+                    this::returnToSelection,             
+                    this::returnToStageSelection,        
+                    Main::showMainMenu                   
                 );
             }
             pauseMenu.setSize(getSize());
-            add(pauseMenu);                    // Adiciona como componente
-            pauseMenu.requestFocusInWindow();  // Força o foco
+            add(pauseMenu);
+            pauseMenu.requestFocusInWindow();
         } else {
             if (pauseMenu != null) {
                 remove(pauseMenu);
@@ -203,6 +215,9 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
     }
 
     private void resetGame() {
+    	controller.resetGame();
+        controller.getPlayer().setBlocking(false); // 🛡️ Garante guarda aberta no reset
+        movement = new PlayerMovement(150, 220, controller.getPlayer().getSpeed());
         controller.resetGame();
         movement = new PlayerMovement(150, 220, controller.getPlayer().getSpeed());
 
@@ -214,6 +229,11 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
                 this::repaint
         );
         repaint();
+    }
+    
+    private void returnToStageSelection() {
+        resumeGame(); // fecha o pause primeiro
+        Main.returnToStageSelection(); // chama o método que vamos criar no Main
     }
 
     @Override

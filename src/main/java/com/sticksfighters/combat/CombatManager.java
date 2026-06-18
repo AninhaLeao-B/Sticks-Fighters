@@ -3,7 +3,6 @@ package com.sticksfighters.combat;
 import com.sticksfighters.animation.CombatAnimationManager;
 import com.sticksfighters.controller.GameController;
 import com.sticksfighters.physics.PlayerMovement;
-
 import java.util.Objects;
 
 public class CombatManager {
@@ -19,35 +18,46 @@ public class CombatManager {
                          CombatAnimationManager animations,
                          int enemyX,
                          Runnable repaintCallback) {
-
-        this.controller = Objects.requireNonNull(controller, "GameController cannot be null");
-        this.movement = Objects.requireNonNull(movement, "PlayerMovement cannot be null");
-        this.animations = Objects.requireNonNull(animations, "CombatAnimationManager cannot be null");
-        this.repaintCallback = Objects.requireNonNull(repaintCallback, "Repaint callback cannot be null");
+        this.controller = Objects.requireNonNull(controller);
+        this.movement = Objects.requireNonNull(movement);
+        this.animations = Objects.requireNonNull(animations);
+        this.repaintCallback = Objects.requireNonNull(repaintCallback);
         this.enemyX = enemyX;
     }
 
     public void playerAttack(String type) {
-        int distance = Math.abs(movement.getPlayerX() - enemyX);
+        // Congela a distância exata do momento do golpe do jogador
+        final int lockedDistance = getCurrentDistance();
 
-        controller.playerAttack(
-                type,
-                movement.isJumping(),
-                movement.isCrouching(),
-                distance);
+        boolean playerHit = controller.playerAttack(type, movement.isJumping(), movement.isCrouching(), lockedDistance);
+        
+        animations.playPlayerAttackAnimation(type);
 
-        // Passa o tipo do ataque para a animação
-        animations.playPlayerAttackAnimation(type);   
+        if (playerHit) {
+            animations.triggerEnemyDamage(); 
+            repaintCallback.run(); 
+        }
 
         if (controller.getEnemy().isAlive()) {
             animations.playEnemyAttackAnimation(() -> {
-                controller.enemyAttack(distance);
+                // Usa a distância congelada (lockedDistance) para o revide
+                boolean enemyHit = controller.enemyAttack(lockedDistance, movement.isJumping(), movement.isCrouching());
+                
+                if (enemyHit) {
+                    animations.playDamageAnimation(); // Animação de dano no Chicão
+                }
+                
                 repaintCallback.run();
             });
+        } else {
+            repaintCallback.run();
         }
     }
 
-    // Getter para testes
+    public void triggerPlayerDamage() {
+        animations.playDamageAnimation();
+    }
+
     public int getCurrentDistance() {
         return Math.abs(movement.getPlayerX() - enemyX);
     }

@@ -10,6 +10,9 @@ public class Fighter {
     private int health;
     private int specialEnergy;
     private boolean isAlive;
+    private long stunEndTime = 0;
+    private boolean isStunned = false;
+    private boolean blocking;
 
     // Construtor
     public Fighter(FighterData data) {
@@ -28,16 +31,36 @@ public class Fighter {
     }
 
     public void receiveDamage(int damage) {
-        if (damage <= 0) {
-            return;
-        }
+        if (damage <= 0) return;
 
         this.health -= damage;
-
         if (this.health <= 0) {
             this.health = 0;
             this.isAlive = false;
         }
+
+        // 🛡️ SÓ ENTRA EM STUN SE NÃO ESTIVER DEFENDENDO!
+        if (!this.blocking) {
+            this.isStunned = true;
+            this.stunEndTime = System.currentTimeMillis() + 750;
+        } else {
+            System.out.println("🛡️ Bloqueou o impacto! Sem atordoamento.");
+        }
+    }
+    
+    public boolean isStunned() {
+        if (isStunned && System.currentTimeMillis() > stunEndTime) {
+            isStunned = false;
+        }
+        return isStunned;
+    }
+    
+    public boolean isBlocking() {
+        return blocking;
+    }
+
+    public void setBlocking(boolean blocking) {
+        this.blocking = blocking;
     }
 
     public void heal(int amount) {
@@ -75,6 +98,9 @@ public class Fighter {
     public double getHealthPercentage() {
         return maxHealth > 0 ? (double) health / maxHealth * 100 : 0;
     }
+    public double getDefense() { 
+        return data.getDefense(); 
+    }
 
     public int getSpecialEnergy() { return specialEnergy; }
     public int getMaxSpecialEnergy() { return maxSpecialEnergy; }
@@ -86,13 +112,14 @@ public class Fighter {
     public int getRange() { return data.getRange(); }
     public String getSpriteFolder() { return data.getSpriteFolder(); }
 
-    /**
-     * Útil para testes e resetar entre rounds
-     */
-    public void reset() {
+    
+    // Útil para testes e resetar entre rounds
+        public void reset() {
         this.health = maxHealth;
         this.specialEnergy = 0;
         this.isAlive = true;
+        this.isStunned = false;
+        this.blocking = false;
     }
 
     @Override
