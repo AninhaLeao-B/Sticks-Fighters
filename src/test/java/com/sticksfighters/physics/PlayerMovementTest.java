@@ -1,11 +1,10 @@
 package com.sticksfighters.physics;
 
+import com.sticksfighters.fighters.Fighters;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
-
-import com.sticksfighters.fighters.Fighters;
 
 class PlayerMovementTest {
 
@@ -13,163 +12,94 @@ class PlayerMovementTest {
 
     @BeforeEach
     void setUp() {
-        movement = new PlayerMovement(
-                150,
-                220,
-                Fighters.rataCamponesa().getSpeed());
+        movement = new PlayerMovement(150, 220, 6);
     }
 
-    // Movimento para esquerda
     @Test
-    void moveLeftShouldDecreasePlayerX() {
-
-        int initialX = movement.getPlayerX();
-
+    void deveMoverParaEsquerda() {
+        int xInicial = movement.getPlayerX();
         movement.moveLeft();
-
-        assertTrue(
-                movement.getPlayerX() < initialX);
+        movement.update();
+        assertTrue(movement.getPlayerX() < xInicial);
     }
 
-    // Movimento para direita
     @Test
-    void moveRightShouldIncreasePlayerX() {
-
-        int initialX = movement.getPlayerX();
-
+    void deveMoverParaDireita() {
+        int xInicial = movement.getPlayerX();
         movement.moveRight(550);
-
-        assertTrue(
-                movement.getPlayerX() > initialX);
+        movement.update();
+        assertTrue(movement.getPlayerX() > xInicial);
     }
 
-    // Não sai da tela pela esquerda
     @Test
-    void playerShouldNotMoveBeyondLeftLimit() {
-
-        movement = new PlayerMovement(
-                30,
-                220,
-                Fighters.rataCamponesa().getSpeed());
-
+    void naoDevePassarDoLimiteEsquerdo() {
+        movement = new PlayerMovement(30, 220, 6);
         movement.moveLeft();
-
-        assertEquals(
-                30,
-                movement.getPlayerX());
+        assertEquals(30, movement.getPlayerX());
     }
 
-    // Não atravessa o inimigo
     @Test
-    void playerShouldNotCrossEnemy() {
-
-        movement = new PlayerMovement(
-                460,
-                220,
-                Fighters.rataCamponesa().getSpeed());
-
+    void naoDeveAtravessarInimigo() {
+        movement = new PlayerMovement(460, 220, 6);
         movement.moveRight(550);
-
-        assertEquals(
-                460,
-                movement.getPlayerX());
+        assertEquals(460, movement.getPlayerX());
     }
 
-    // Pulo inicia corretamente
     @Test
-    void jumpShouldActivateJumpingState() {
-
+    void deveIniciarPuloCorretamente() {
         movement.jump();
-
-        assertTrue(
-                movement.isJumping());
+        assertTrue(movement.isJumping());
     }
 
-    // Update do pulo move o personagem para cima
     @Test
-    void updateShouldMovePlayerUpDuringJump() {
+    void naoDeveReiniciarPuloEnquantoEstaNoAr() {
+        movement.jump();
+        movement.jump(); // segunda chamada
+        assertTrue(movement.isJumping());
+    }
 
-        int initialY =
-                movement.getPlayerY();
-
+    @Test
+    void deveAtualizarPosicaoDurantePulo() {
+        int yInicial = movement.getPlayerY();
         movement.jump();
         movement.update();
-
-        assertTrue(
-                movement.getPlayerY() < initialY);
+        assertTrue(movement.getPlayerY() < yInicial);
     }
 
-    // Personagem volta ao chão
     @Test
-    void playerShouldReturnToGroundAfterJump() {
-
-        int initialY =
-                movement.getPlayerY();
-
+    void deveVoltarAoChaoAposPulo() {
+        int yInicial = movement.getPlayerY();
         movement.jump();
 
         for (int i = 0; i < 100; i++) {
             movement.update();
         }
 
-        assertEquals(
-                initialY,
-                movement.getPlayerY());
-
-        assertFalse(
-                movement.isJumping());
+        assertEquals(yInicial, movement.getPlayerY());
+        assertFalse(movement.isJumping());
     }
 
-    // Personagem abaixa
     @Test
-    void crouchShouldActivateCrouching() {
-
+    void deveAgacharCorretamente() {
         movement.crouch();
-
-        assertTrue(
-                movement.isCrouching());
+        assertTrue(movement.isCrouching());
     }
 
-    // Personagem levanta
     @Test
-    void stopCrouchingShouldDeactivateCrouching() {
-
+    void deveLevantarAoPararDeAgachar() {
         movement.crouch();
         movement.stopCrouching();
-
-        assertFalse(
-                movement.isCrouching());
+        assertFalse(movement.isCrouching());
     }
 
-    // Movimento respeita velocidade do personagem
     @Test
-    void movementShouldRespectCharacterSpeed() {
-
-        PlayerMovement movement =
-                new PlayerMovement(
-                        150,
-                        220,
-                        22);
-
-        int initialX =
-                movement.getPlayerX();
-
+    void deveMoverContinuamenteEnquantoTeclaPressionada() {
         movement.moveRight(550);
+        int xInicial = movement.getPlayerX();
 
-        assertEquals(
-                initialX + 22,
-                movement.getPlayerX());
-    }
+        movement.update();
+        movement.update();
 
-    // Não reinicia pulo enquanto já está pulando
-    @Test
-    void jumpShouldNotRestartWhileAlreadyJumping() {
-
-        movement.jump();
-
-        movement.jump();
-
-        assertTrue(
-                movement.isJumping());
+        assertTrue(movement.getPlayerX() > xInicial);
     }
 }

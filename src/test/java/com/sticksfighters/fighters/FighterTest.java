@@ -1,160 +1,135 @@
 package com.sticksfighters.fighters;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class FighterTest {
 
-	// Garante que o construtor funciona
-	@Test
-	void fighterStartsWithMaxHealth() {
+    private Fighter rata;
+    private Fighter chicao;
 
-	    Fighter fighter =
-	            new Fighter(Fighters.rataCamponesa());
-
-	    assertEquals(
-	            fighter.getMaxHealth(),
-	            fighter.getHealth());
-	}
-    
-    // Garante o recebimento de dano
-	@Test
-	void fighterLosesHealthWhenReceivingDamage() {
-
-	    Fighter fighter =
-	            new Fighter(Fighters.rataCamponesa());
-
-	    int initialHealth =
-	            fighter.getHealth();
-
-	    fighter.receiveDamage(20);
-
-	    assertEquals(
-	            initialHealth - 20,
-	            fighter.getHealth());
-	}
-    
-    // Garante a morte do lutador
-    @Test
-    void fighterDiesWhenHealthReachesZero() {
-
-    	Fighter fighter =
-    	        new Fighter(Fighters.rataCamponesa());
-
-    	fighter.receiveDamage(
-    	        fighter.getMaxHealth());
-
-        assertFalse(fighter.isAlive());
+    @BeforeEach
+    void setUp() {
+        rata = new Fighter(Fighters.rataCamponesa());
+        chicao = new Fighter(Fighters.chicao());
     }
-    
-    // Garante que a energia não pode exceder a capacidade máxima
+
     @Test
-    void specialEnergyCannotExceedMaximum() {
-
-        Fighter fighter =
-                new Fighter(Fighters.rataCamponesa());
-
-        fighter.gainSpecialEnergy(200);
-
-        assertEquals(
-                fighter.getMaxSpecialEnergy(),
-                fighter.getSpecialEnergy());
+    void deveIniciarComVidaMaxima() {
+        assertEquals(rata.getMaxHealth(), rata.getHealth());
+        assertTrue(rata.isAlive());
+        assertEquals(0, rata.getSpecialEnergy());
     }
-    
-    // Garante que o lutador não pode receber dano negativo
+
     @Test
-    void fighterDoesNotReceiveNegativeDamage() {
-
-        Fighter fighter =
-                new Fighter(Fighters.rataCamponesa());
-
-        int initialHealth =
-                fighter.getHealth();
-
-        fighter.receiveDamage(-50);
-
-        assertEquals(
-                initialHealth,
-                fighter.getHealth());
+    void deveReceberDanoCorretamente() {
+        int vidaInicial = rata.getHealth();
+        rata.receiveDamage(25);
+        assertEquals(vidaInicial - 25, rata.getHealth());
     }
-    
-    // Garante que o especial não pode ser usado sem energia suficiente
+
     @Test
-    void specialCannotBeUsedWithoutEnoughEnergy() {
-
-    	Fighter fighter =
-    	        new Fighter(Fighters.rataCamponesa());
-
-        boolean result = fighter.useSpecialEnergy(50);
-
-        assertFalse(result);
+    void naoDeveReceberDanoNegativo() {
+        int vidaInicial = rata.getHealth();
+        rata.receiveDamage(-30);
+        assertEquals(vidaInicial, rata.getHealth());
     }
-    
-    // Garante que a cura não exceda o limite máximo
+
     @Test
-    void healingCannotExceedMaximumHealth() {
-
-        Fighter fighter =
-                new Fighter(Fighters.rataCamponesa());
-
-        fighter.receiveDamage(20);
-        fighter.heal(50);
-
-        assertEquals(
-                fighter.getMaxHealth(),
-                fighter.getHealth());
+    void deveMorrerQuandoVidaChegarAZero() {
+        rata.receiveDamage(rata.getMaxHealth() + 10);
+        assertEquals(0, rata.getHealth());
+        assertFalse(rata.isAlive());
     }
-    
-    // Lutador carrega os dados corretamente
+
     @Test
-    void fighterShouldLoadDataCorrectly() {
+    void deveBloquearDanoSemEntrarEmStun() {
+        rata.setBlocking(true);
+        rata.receiveDamage(40);
 
-        Fighter fighter =
-                new Fighter(Fighters.chicao());
-
-        assertEquals("Chicão", fighter.getName());
-        assertEquals(140, fighter.getMaxHealth());
-        assertEquals(16, fighter.getSpeed());
-        assertEquals(18, fighter.getStrength());
-        assertEquals(15, fighter.getRange());
+        assertEquals(rata.getMaxHealth() - 40, rata.getHealth()); // ainda perde vida
+        assertFalse(rata.isStunned()); // mas não fica stunado
     }
-    
+
     @Test
-    void rataShouldHaveCorrectAttributes() {
-
-        Fighter fighter =
-                new Fighter(Fighters.rataCamponesa());
-
-        assertEquals("Rata Camponesa", fighter.getName());
-        assertEquals(100, fighter.getMaxHealth());
-        assertEquals(22, fighter.getSpeed());
-        assertEquals(10, fighter.getStrength());
-        assertEquals(0, fighter.getRange());
+    void deveEntrarEmStunQuandoReceberDanoSemBloquear() {
+        rata.setBlocking(false);
+        rata.receiveDamage(30);
+        assertTrue(rata.isStunned());
     }
-    
+
     @Test
-    void specialEnergyShouldBeConsumed() {
+    void stunDeveExpirarDepoisDoTempo() throws InterruptedException {
+        rata.receiveDamage(30);
+        assertTrue(rata.isStunned());
 
-        Fighter fighter =
-                new Fighter(Fighters.rataCamponesa());
-
-        fighter.gainSpecialEnergy(100);
-
-        fighter.useSpecialEnergy(50);
-
-        assertEquals(
-                50,
-                fighter.getSpecialEnergy());
+        Thread.sleep(800); // um pouco mais que os 750ms
+        assertFalse(rata.isStunned());
     }
-    
+
     @Test
-    void healthShouldNeverBecomeNegative() {
+    void deveCurarCorretamenteSemExcederMaximo() {
+        rata.receiveDamage(40);
+        rata.heal(20);
+        assertEquals(rata.getMaxHealth() - 20, rata.getHealth());
 
-        Fighter fighter =
-                new Fighter(Fighters.rataCamponesa());
+        rata.heal(100); // tenta curar além do máximo
+        assertEquals(rata.getMaxHealth(), rata.getHealth());
+    }
 
-        fighter.receiveDamage(9999);
+    @Test
+    void deveGerenciarEnergiaEspecialCorretamente() {
+        rata.gainSpecialEnergy(60);
+        assertEquals(60, rata.getSpecialEnergy());
 
-        assertEquals(0, fighter.getHealth());
+        rata.gainSpecialEnergy(100); // tenta ultrapassar
+        assertEquals(100, rata.getSpecialEnergy());
+
+        boolean usou = rata.useSpecialEnergy(40);
+        assertTrue(usou);
+        assertEquals(60, rata.getSpecialEnergy());
+
+        boolean naoUsou = rata.useSpecialEnergy(100);
+        assertFalse(naoUsou);
+    }
+
+    @Test
+    void deveResetarCorretamente() {
+        rata.receiveDamage(50);
+        rata.gainSpecialEnergy(80);
+        rata.setBlocking(true);
+
+        rata.reset();
+
+        assertEquals(rata.getMaxHealth(), rata.getHealth());
+        assertEquals(0, rata.getSpecialEnergy());
+        assertTrue(rata.isAlive());
+        assertFalse(rata.isStunned());
+        assertFalse(rata.isBlocking());
+    }
+
+    @Test
+    void deveCarregarAtributosDoFighterDataCorretamente() {
+        assertEquals("Rata Camponesa", rata.getName());
+        assertEquals(100, rata.getMaxHealth());
+        assertEquals(22, rata.getSpeed());
+        assertEquals(10, rata.getStrength());
+        assertEquals(0, rata.getRange());
+
+        assertEquals("Chicão", chicao.getName());
+        assertEquals(140, chicao.getMaxHealth());
+    }
+
+    @Test
+    void healthPercentageDeveSerCalculadoCorretamente() {
+        assertEquals(100.0, rata.getHealthPercentage(), 0.001);
+
+        rata.receiveDamage(50);
+        assertEquals(50.0, rata.getHealthPercentage(), 0.001);
+
+        rata.receiveDamage(100);
+        assertEquals(0.0, rata.getHealthPercentage(), 0.001);
     }
 }

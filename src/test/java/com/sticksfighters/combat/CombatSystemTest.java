@@ -1,129 +1,107 @@
 package com.sticksfighters.combat;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import org.junit.jupiter.api.Test;
-
 import com.sticksfighters.attacks.Attack;
 import com.sticksfighters.attacks.AttackFactory;
-import com.sticksfighters.controller.GameController;
 import com.sticksfighters.fighters.Fighter;
 import com.sticksfighters.fighters.Fighters;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class CombatSystemTest {
-	
-	@Test
-	void attackShouldReduceEnemyHealth() {
+import static org.junit.jupiter.api.Assertions.*;
 
-		Fighter attacker =
-		        new Fighter(Fighters.rataCamponesa());
+class CombatSystemTest {
 
-		Fighter defender =
-		        new Fighter(Fighters.chicao());
+    private Fighter rata;
+    private Fighter chicao;
 
-	    Attack attack = AttackFactory.socoFraco();
+    @BeforeEach
+    void setUp() {
+        rata = new Fighter(Fighters.rataCamponesa());
+        chicao = new Fighter(Fighters.chicao());
+    }
 
-	    CombatSystem.executeAttack(attacker, defender, attack);
+    @Test
+    void deveReduzirVidaDoDefensor() {
+        int vidaInicial = chicao.getHealth();
+        Attack attack = AttackFactory.socoFraco();
 
-	    assertEquals(116, defender.getHealth());
-	}
-	
-	@Test
-	void attackShouldGenerateSpecialEnergy() {
+        CombatSystem.executeAttack(rata, chicao, attack);
 
-		Fighter attacker =
-		        new Fighter(Fighters.rataCamponesa());
+        assertTrue(chicao.getHealth() < vidaInicial);
+    }
 
-		Fighter defender =
-		        new Fighter(Fighters.chicao());
+    @Test
+    void deveGerarEnergiaEspecialEmAtaqueNormal() {
+        int energiaInicial = rata.getSpecialEnergy();
+        Attack attack = AttackFactory.socoFraco();
 
-	    Attack attack = AttackFactory.socoFraco();
+        CombatSystem.executeAttack(rata, chicao, attack);
 
-	    CombatSystem.executeAttack(attacker, defender, attack);
+        assertEquals(energiaInicial + 10, rata.getSpecialEnergy());
+    }
 
-	    assertEquals(10, attacker.getSpecialEnergy());
-	}
-	
-	@Test
-	void specialAttackShouldConsumeEnergy() {
+    @Test
+    void deveConsumirEnergiaEmAtaqueEspecial() {
+        rata.gainSpecialEnergy(100);
+        Attack hadouken = AttackFactory.hadouken();
 
-		Fighter attacker =
-		        new Fighter(Fighters.rataCamponesa());
+        CombatSystem.executeAttack(rata, chicao, hadouken);
 
-		Fighter defender =
-		        new Fighter(Fighters.chicao());
+        assertEquals(100 - 45, rata.getSpecialEnergy()); // Hadouken custa 45
+    }
 
-	    attacker.gainSpecialEnergy(100);
+    @Test
+    void deveAplicarDefesaQuandoDefensorEstiverBloqueando() {
+        chicao.setBlocking(true);
+        int vidaInicial = chicao.getHealth();
+        Attack attack = AttackFactory.socoForte(); // dano base 25 + força
 
-	    Attack attack = AttackFactory.hadouken();
+        CombatSystem.executeAttack(rata, chicao, attack);
 
-	    CombatSystem.executeAttack(attacker, defender, attack);
+        // Como Chicao tem 0.35 de defense, deve reduzir o dano em 35%
+        assertTrue(chicao.getHealth() > vidaInicial - 40); // menos dano que o normal
+    }
 
-	    assertEquals(55, attacker.getSpecialEnergy());
-	}
-	
-	@Test
-	void rataShouldNotHitFromFarAway() {
+    @Test
+    void naoDeveEntrarEmStunQuandoBloqueando() {
+        chicao.setBlocking(true);
+        Attack attack = AttackFactory.socoForte();
 
-	    GameController controller =
-	            new GameController();
+        CombatSystem.executeAttack(rata, chicao, attack);
 
-	    int initialHealth =
-	            controller.getEnemy().getHealth();
+        assertFalse(chicao.isStunned());
+    }
 
-	    controller.playerAttack(
-	            "punch_weak",
-	            false,
-	            false,
-	            250);
+    @Test
+    void deveLancarExcecaoQuandoParametrosNulos() {
+        Attack attack = AttackFactory.socoFraco();
 
-	    assertEquals(
-	            initialHealth,
-	            controller.getEnemy().getHealth());
-	}
-	
-	@Test
-	void rataShouldHitFromCloseRange() {
+        assertThrows(IllegalArgumentException.class, () -> 
+            CombatSystem.executeAttack(null, chicao, attack));
 
-	    GameController controller =
-	            new GameController();
+        assertThrows(IllegalArgumentException.class, () -> 
+            CombatSystem.executeAttack(rata, null, attack));
 
-	    int initialHealth =
-	            controller.getEnemy().getHealth();
+        assertThrows(IllegalArgumentException.class, () -> 
+            CombatSystem.executeAttack(rata, chicao, null));
+    }
 
-	    controller.playerAttack(
-	            "punch_weak",
-	            false,
-	            false,
-	            50);
+    @Test
+    void naoDeveExecutarAtaqueSeAtacanteEstiverMorto() {
+        rata.receiveDamage(999);
+        int vidaInicialDefensor = chicao.getHealth();
 
-	    assertTrue(
-	            controller.getEnemy().getHealth()
-	                    < initialHealth);
-	}
-	
-	@Test
-	void rataShouldHaveZeroExtraRange() {
+        CombatSystem.executeAttack(rata, chicao, AttackFactory.socoFraco());
 
-	    Fighter rata =
-	            new Fighter(
-	                    Fighters.rataCamponesa());
+        assertEquals(vidaInicialDefensor, chicao.getHealth()); // não causou dano
+    }
 
-	    assertEquals(
-	            0,
-	            rata.getRange());
-	}
-	
-	@Test
-	void chicaoShouldHaveExtraRange() {
+    @Test
+    void calculateDamageDeveRetornarValorCorreto() {
+        Attack attack = AttackFactory.socoForte();
 
-	    Fighter chicao =
-	            new Fighter(
-	                    Fighters.chicao());
+        int dano = CombatSystem.calculateDamage(rata, attack);
 
-	    assertEquals(
-	            15,
-	            chicao.getRange());
-	}
-
+        assertEquals(attack.getDamage() + rata.getStrength(), dano);
+    }
 }

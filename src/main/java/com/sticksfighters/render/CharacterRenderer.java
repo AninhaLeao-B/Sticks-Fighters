@@ -65,39 +65,39 @@ public class CharacterRenderer {
         if (animations.isPlayerDamaged()) {
             currentAnimation = getOrLoadAnimation(damageAnimations, folder, "damage");
             currentAction = "damage";
-            offsetY = 60;
+            offsetY = 160;
         }
         else if (animations.isPlayerAttacking()) {
             String attackType = animations.getCurrentAttackType();
             currentAnimation = getOrLoadAnimation(attackAnimations, folder, attackType);
             currentAction = "attack";
-            offsetY = 60;
+            offsetY = 160;
         } 
         else if (fighter.isBlocking()) {
             currentAnimation = getOrLoadAnimation(blockAnimations, folder, "block");
             currentAction = "block";
-            offsetY = 60;
+            offsetY = 160;
         }
         else if (animations.isPlayerJumping() || movement.isJumping()) {
             currentAnimation = getOrLoadAnimation(jumpAnimations, folder, "jump");
             currentAction = "jump";
-            offsetY = 60;
+            offsetY = 160;
         } 
         else if (animations.isPlayerCrouching() || movement.isCrouching()) {
             currentAnimation = getOrLoadAnimation(crouchAnimations, folder, "crouch");
             currentAction = "crouch";
-            offsetY = 60;
+            offsetY = 160;
             offsetX = 10;
         } 
         else if (movement.isMoving()) {
             currentAnimation = getOrLoadAnimation(walkAnimations, folder, "walk");
             currentAction = "walk";
-            offsetY = 60;
+            offsetY = 160;
         } 
         else {
             currentAnimation = getOrLoadAnimation(idleAnimations, folder, "idle");
             currentAction = "idle";
-            offsetY = 60;
+            offsetY = 160;
         }
 
         // === Reset de Animação ao Mudar de Estado (MANTIDO) ===
@@ -141,7 +141,7 @@ public class CharacterRenderer {
         String folder = enemy.getSpriteFolder();
         SpriteAnimation currentAnimation;
         int offsetX = 0;
-        int offsetY = 60;
+        int offsetY = 160;
         String currentAction = "idle";
 
         // Prioridades Inimigo
